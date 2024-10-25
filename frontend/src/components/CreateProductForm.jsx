@@ -1,9 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { PlusCircle, Upload, Loader } from 'lucide-react';
-import { create } from 'zustand';
 import { useProductStore } from '../stores/useProductStore';
-import { set } from 'mongoose';
 
 const categories = ["jeans", "t-shirts", "shoes", "glasses", "jackets", "suits", "bags"];
 
@@ -20,7 +18,7 @@ const CreateProductForm = () => {
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
-		console.log('newProduct', newProduct);
+		//console.log('newProduct', newProduct);
 		try {
 			await createProduct(newProduct);
 			setNewProduct({
