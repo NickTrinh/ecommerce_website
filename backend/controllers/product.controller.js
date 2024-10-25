@@ -1,5 +1,6 @@
 import Product from '../models/product.model.js';
 import cloudinary from '../lib/cloudinary.js';
+import { redis } from "../lib/redis.js";
 
 // get all products
 export const getAllProducts = async (req, res) => {
@@ -46,7 +47,7 @@ export const createProduct = async (req, res) => {
 		let cloudinaryResponse = null;
 
 		if (image) {
-			await cloudinary.uploader.upload(image, { folder: 'products' });
+			cloudinaryResponse = await cloudinary.uploader.upload(image, { folder: "products" });
 		}
 
 		const product = await Product.create({
@@ -57,7 +58,7 @@ export const createProduct = async (req, res) => {
 			category,
 		});
 
-		res.status(201).json({ product });
+		res.status(201).json(product);
 	} catch (error) {
 		console.log('Error in createProduct controller', error.message);
 		res.status(500).json({ message: 'Server error', error: error.message });
