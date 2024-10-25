@@ -1,35 +1,41 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { PlusCircle, Upload, Loader } from 'lucide-react';
-//import { useProductStore } from '../stores/useProductStore';
+import { create } from 'zustand';
+import { useProductStore } from '../stores/useProductStore';
+import { set } from 'mongoose';
 
-const categories = [
-	'jeans',
-	't-shirts',
-	'shoes',
-	'glasses',
-	'jackets',
-	'suits',
-	'bags',
-];
+const categories = ["jeans", "t-shirts", "shoes", "glasses", "jackets", "suits", "bags"];
 
 const CreateProductForm = () => {
-	const [newProduct, setNewProduct] = useState({
-		name: '',
-		description: '',
-		price: '',
-		category: '',
-		image: '',
-	});
+    const [newProduct, setNewProduct] = useState({
+        name: "",
+        description: "",
+        price: "",
+        category: "",
+        image: "",
+    });
 
-	//const { createProduct, loading } = useProductStore();
+	const { createProduct, loading } = useProductStore();
 
 	const handleSubmit = async (e) => {
 		e.preventDefault();
-		console.log(newProduct);
+		console.log('newProduct', newProduct);
+		try {
+			await createProduct(newProduct);
+			setNewProduct({
+				name: '',
+				description: '',
+				price: '',
+				category: '',
+				image: '',
+			}); // clear form
+		} catch {
+			console.log('error creating product');
+		}
 	};
 
-	/*const handleImageChange = (e) => {
+	const handleImageChange = (e) => {
 		const file = e.target.files[0];
 		if (file) {
 			const reader = new FileReader();
@@ -38,9 +44,9 @@ const CreateProductForm = () => {
 				setNewProduct({ ...newProduct, image: reader.result });
 			};
 
-			reader.readAsDataURL(file); // base64
+			reader.readAsDataURL(file); // base64 format of img
 		}
-	};*/
+	};
 
 	return (
 		<motion.div
@@ -145,7 +151,7 @@ const CreateProductForm = () => {
 						id="image"
 						className="sr-only"
 						accept="image/*"
-						// onChange={handleImageChange}
+						onChange={handleImageChange}
 					/>
 					<label
 						htmlFor="image"
@@ -155,7 +161,9 @@ const CreateProductForm = () => {
 						Upload Image
 					</label>
 					{newProduct.image && (
-						<span className="ml-3 text-sm text-gray-400">Image uploaded </span>
+						<span className="ml-3 text-sm text-gray-400">
+							Image uploaded successfully
+						</span>
 					)}
 				</div>
 
