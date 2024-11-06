@@ -25,6 +25,7 @@ export const createCheckoutSession = async (req, res) => {
 					},
 					unit_amount: amount,
 				},
+				quantity: product.quantity || 1,
 			};
 		}); // Calculate total amount
 
@@ -120,6 +121,7 @@ async function createStripeCoupon(discountPercentage) {
 }
 
 async function createNewCoupon(userId) {
+	await Coupon.findOneAndDelete({userId: userId});
 	const newCoupon = new Coupon({
 		code: 'GIFT' + Math.random().toString(36).substring(2, 8).toUpperCase(),
 		discountPercentage: 10,
