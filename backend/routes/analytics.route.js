@@ -9,19 +9,25 @@ router.get("/", protectRoute, adminRoute, async (req, res) => {
     try {
         const analyticsData = await getAnalyticsData();
 
+        // Get current date at the start of the day
         const endDate = new Date();
-        const startDate = new Date(endDate.getTime()  - 7 * 24 * 60 * 60 * 1000); // 7 days
+        endDate.setHours(23, 59, 59, 999);  // End of current day
+
+        // Get date 6 days ago at the start of the day
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate()-7);
+        startDate.setHours(0, 0, 0, 0);  // Start of day
 
         const dailySalesData = await getDailySalesData(startDate, endDate);
 
         res.json({
             analyticsData,
             dailySalesData,
-        })
+        });
     } catch (error) {
         console.log("Error in analytics route", error.message);
         res.status(500).json({ message: "Server error", error: error.message });
     }
-})
+});
 
 export default router;
