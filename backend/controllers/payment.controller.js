@@ -7,13 +7,13 @@ export const createCheckoutSession = async (req, res) => {
 		const { products, couponCode } = req.body;
 
 		if (!Array.isArray(products) || products.length === 0) {
-			return res.status(400).json({ message: 'Products array is required' });
+			return res.status(400).json({ error: 'Invalid or empty products array' });
 		}
 
 		let totalAmount = 0;
 
 		const lineItems = products.map((product) => {
-			const amount = Math.round(product.price * 100); // Convert to cents for stripe
+			const amount = Math.round(product.price * 100); // stripe wants u to send in the format of cents
 			totalAmount += amount * product.quantity;
 
 			return {
@@ -27,22 +27,28 @@ export const createCheckoutSession = async (req, res) => {
 				},
 				quantity: product.quantity || 1,
 			};
-		}); // Calculate total amount
+		});
 
 		let coupon = null;
 		if (couponCode) {
-			coupon = await Coupon.findOne({ code: couponCode, userId: req.user, isActive: true });
+			coupon = await Coupon.findOne({
+				code: couponCode,
+				userId: req.user._id,
+				isActive: true,
+			});
 			if (coupon) {
 				totalAmount -= Math.round((totalAmount * coupon.discountPercentage) / 100);
 			}
 		}
 
+		const ClientUrl = process.env.CLIENT_URL.replace(/\/+$/, ''); // Remove trailing slashes
+
 		const session = await stripe.checkout.sessions.create({
 			payment_method_types: ['card'],
 			line_items: lineItems,
 			mode: 'payment',
-			success_url: `${process.env.CLIENT_URL}/purchase-success?session_id={CHECKOUT_SESSION_ID}`,
-			cancel_url: `${process.env.CLIENT_URL}/purchase-cancel`,
+			success_url: `${ClientUrl}/purchase-success?session_id={CHECKOUT_SESSION_ID}`,
+			cancel_url: `${ClientUrl}/purchase-cancel`,
 			discounts: coupon
 				? [
 						{
@@ -68,8 +74,10 @@ export const createCheckoutSession = async (req, res) => {
 		}
 		res.status(200).json({ id: session.id, totalAmount: totalAmount / 100 });
 	} catch (error) {
-		console.log('Error in createCheckoutSession controller', error.message);
-		res.status(500).json({ message: 'Server Error', error: error.message });
+		console.error('Error processing checkout:', error);
+		res
+			.status(500)
+			.json({ message: 'Error processing checkout', error: error.message });
 	}
 };
 
@@ -81,11 +89,17 @@ export const checkoutSuccess = async (req, res) => {
 		if (session.payment_status === 'paid') {
 			if (session.metadata.couponCode) {
 				await Coupon.findOneAndUpdate(
-					{ code: session.metadata.couponCode, userId: session.metadata.userId },
-					{ isActive: false }
+					{
+						code: session.metadata.couponCode,
+						userId: session.metadata.userId,
+					},
+					{
+						isActive: false,
+					}
 				);
 			}
-			//create new order
+
+			// create a new Order
 			const products = JSON.parse(session.metadata.products);
 			const newOrder = new Order({
 				user: session.metadata.userId,
@@ -94,20 +108,25 @@ export const checkoutSuccess = async (req, res) => {
 					quantity: product.quantity,
 					price: product.price,
 				})),
-				totalAmount: session.amount_total / 100, // Convert cents to dollars
+				totalAmount: session.amount_total / 100, // convert from cents to dollars,
 				stripeSessionId: sessionId,
 			});
 
 			await newOrder.save();
-			res.json(200).json({
+
+			res.status(200).json({
 				success: true,
-				message: 'Payment successful, order created, and coupon deactivated if used.',
+				message:
+					'Payment successful, order created, and coupon deactivated if used.',
 				orderId: newOrder._id,
 			});
 		}
 	} catch (error) {
-		console.error('Error in checkout-success route: ', error);
-		res.status(500).json({ message: 'Error processing checkout', error: error.message });
+		console.error('Error processing successful checkout:', error);
+		res.status(500).json({
+			message: 'Error processing successful checkout',
+			error: error.message,
+		});
 	}
 };
 
@@ -122,6 +141,7 @@ async function createStripeCoupon(discountPercentage) {
 
 async function createNewCoupon(userId) {
 	await Coupon.findOneAndDelete({userId: userId});
+
 	const newCoupon = new Coupon({
 		code: 'GIFT' + Math.random().toString(36).substring(2, 8).toUpperCase(),
 		discountPercentage: 10,
