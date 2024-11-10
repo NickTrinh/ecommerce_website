@@ -6,7 +6,7 @@ import LoginPage from './pages/LoginPage';
 import AdminPage from './pages/AdminPage';
 import CategoryPage from './pages/CategoryPage';
 
-import Navbar from './components/Navbar';
+import NavBar from './components/NavBar';
 import { Toaster } from 'react-hot-toast';
 import { useUserStore } from './stores/useUserStore';
 import { useEffect } from 'react';
@@ -41,7 +41,7 @@ function App() {
 			</div>
 
 			<div className="relative z-50 pt-20">
-				<Navbar />
+				<NavBar />
 				<Routes>
 					<Route path="/" element={<HomePage />} />
 					<Route
