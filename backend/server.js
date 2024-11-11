@@ -2,6 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import path from 'path';
+import cors from 'cors';
 
 // Routes
 import authRoutes from './routes/auth.route.js';
@@ -22,6 +23,14 @@ const __dirname = path.resolve();
 
 app.use(express.json({ limit: '10mb' })); // Allows parsing the body of the request
 app.use(cookieParser()); // Allows parsing cookies
+
+app.use(cors({
+    origin: [
+        'https://ecommerce-website-lpzn.onrender.com',
+        'http://localhost:5173'
+    ],
+    credentials: true
+}));
 
 // Authentication
 app.use('/api/auth', authRoutes);

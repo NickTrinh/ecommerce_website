@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 import HomePage from './pages/HomePage';
 import SignUpPage from './pages/SignUpPage';
@@ -71,6 +71,12 @@ function App() {
 						path="/purchase-cancel"
 						element={user ? <PurchaseCancelPage /> : <Navigate to="/login" />}
 					/>
+					<Route path="*" element={
+						<div className="flex flex-col items-center justify-center min-h-screen">
+							<h1 className="text-4xl font-bold text-emerald-500">404</h1>
+							<p className="text-gray-300">Page not found</p>
+						</div>
+					} />
 				</Routes>
 			</div>
 			<Toaster />
